@@ -26,6 +26,14 @@ Download the OpenShift installer CLI and your pull secret from [here](https://co
 openshift-install --help
 ```
 
+### Install rysnc
+
+MacOS: `brew install rsync`
+
+### Install jq
+
+MacOS: `brew install jq`
+
 ## Create and delete cluster
 
 Create a cluster as follows:
@@ -59,4 +67,58 @@ make cluster/list
 # cluster to delete
 export cluster_name=...
 make cluster/delete
+```
+
+## Launch benchmarks on a single cluster
+
+Login in quay and build the benchmarks image:
+
+```bash
+docker login -u "${USER}" quay.io
+# follow the instructions to make the repo public
+make image/push
+```
+
+Define a benchmark configuration jsonnet file with the following fields:
+
+```bash
+$ cat .local/benchmark_config.jsonnet && echo
+{
+    pods_per_node: 10,
+    pod_churning_period: "1m",
+    number_of_ns: 2
+}
+```
+
+Launch the benchmark on a cluster:
+
+```bash
+# Specify cluster to use, list all clusters launched from this host with `make cluster/list`
+export cluster_name=...
+export KUBECONFIG=$(make cluster/kubeconfig)
+make benchmarks/deploy benchmark_config=.local/benchmark_config.jsonnet
+
+# Download results to local disk
+make benchmarks/data/download output=$(pwd)/.local
+
+# Uninstall benchmarks: NOTE, this deletes the PVC, so the benchmark data
+# is lost in the cluster
+make benchmarks/undeploy benchmark_config=.local/benchmark_config.jsonnet
+```
+
+## Development 
+
+You can run a shell in the image locally for debugging:
+
+```bash
+make image/build/local
+make image/shell/local
+```
+
+Run benchmarks locally:
+
+```bash
+export cluster_name=...
+export KUBECONFIG=$(make cluster/kubeconfig)
+make run/benchmarks run_root=".local/run_benchmarks/$(date +%Y-%m-%d--%H-%M-%S)" pods_per_node=10 pod_churning_period='1m' number_of_ns=2
 ```

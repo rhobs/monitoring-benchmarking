@@ -5,8 +5,9 @@ SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 LOGS_ROOT="${SCRIPT_DIR}/../logs"
 MON_BENCHMARKS_ROOT="${HOME}/.rh/monitoring-benchmarks"
 CONFIG_ROOT="${SCRIPT_DIR}/../config"
+JSONNET_ROOT="${SCRIPT_DIR}/../jsonnet"
 
-mkdir -p "${LOGS_ROOT}"
+mkdir -p "${LOGS_ROOT}" "${MANIFESTS_ROOT}"
 export PATH="${LOCAL_ROOT}/bin:${PATH}"
 
 function date_w_format {
@@ -73,4 +74,73 @@ function delete_cluster {
     config_dir="$(cluster_config_dir "${CLUSTER_NAME}")"
 
     openshift-install destroy cluster --dir="${config_dir}" --log-level=debug 2>&1 | tee -a "${log_file}"
+}
+
+function jsonnet_build {
+    CONFIG="${1}"
+
+    rm -rf "${MANIFESTS_ROOT}"
+    mkdir -p "${MANIFESTS_ROOT}"
+    jsonnet "${JSONNET_ROOT}/main.jsonnet" > "${MANIFESTS_ROOT}/main.json" --tla-code config="${CONFIG}"
+}
+
+function run_benchmarks {
+    run_root="${1}"
+    PODS_PER_NODE="${2}"
+    POD_CHURNING_PERIOD="${3}"
+    NUMBER_OF_NS="${4}"
+
+    mkdir -p "${run_root}"
+
+    echo "Aborting previous uncompleted runs"
+    benchmarks_ns=$(kubectl get namespaces | grep -i prometheus-sizing | awk '{ print $1 }')
+    if [ -n "${benchmarks_ns}" ]
+    then
+        benchmarks_ns_arr=(${benchmarks_ns})
+        for ns in "${benchmarks_ns_arr[@]}"
+        do
+            kubectl delete namespace "${ns}"
+        done
+    fi
+    export PODS_PER_NODE=${PODS_PER_NODE}
+    export POD_CHURNING_PERIOD=${POD_CHURNING_PERIOD}
+    export NUMBER_OF_NS=${NUMBER_OF_NS}
+    METRICS="${CONFIG_ROOT}/prometheus-sizing-metrics.yaml"
+    export METRICS
+    source "${CONFIG_ROOT}/prometheus-sizing-env-base.sh"
+    env > "${run_root}/env.sh"
+
+    workload_root="${E2E_BENCHMARKING_ROOT}/workloads/prometheus-sizing"
+    rm -rf "${workload_root}/collected-metrics/*"
+    # so the downloaded `kube-burner` command is available for the workload script
+    export PATH="${workload_root}":"${PATH}"
+    pushd "${workload_root}"
+    ./prometheus-sizing-churning.sh
+    popd
+    mv "${workload_root}/collected-metrics" "${run_root}/metrics"
+
+    # Confirm the run fully completed successfully
+    touch "${run_root}/SUCCESS"
+    echo "Benchmark run completed successfully, see metrics at ${run_root}/metrics"
+}
+
+function run_benchmarks_continuously {
+    # Assuming env vars defined: BENCHMARKS_RUNS_ROOT PODS_PER_NODE POD_CHURNING_PERIOD NUMBER_OF_NS
+
+    # Make function `openshift_login` a no-op so we can use RBAC credentials for auth
+    sed -i '/function\sopenshift_login.*/a return 0' "${E2E_BENCHMARKING_ROOT}/utils/common.sh"
+    # Use `kubectl` as `oc`
+    function oc { kubectl "$@"; }
+    export -f oc
+
+    while true
+    do
+        run_root="${BENCHMARKS_RUNS_ROOT}/$(date_w_format)"
+        mkdir -p "${run_root}"
+        echo
+        echo
+        echo "Starting new benchmark run at ${run_root}"
+        run_benchmarks "${run_root}" "${PODS_PER_NODE}" "${POD_CHURNING_PERIOD}" "${NUMBER_OF_NS}"
+        echo "Completed benchmark run at ${run_root}"
+    done
 }
