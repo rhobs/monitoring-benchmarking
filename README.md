@@ -1,6 +1,7 @@
 # monitoring-benchmarking
 
-Performance tests for monitoring stack
+Performance tests for monitoring stack.  
+See [design docs](./docs/design.md) for an overview of the design and the structure of this repo.
 
 ## Prerequisites
 
