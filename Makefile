@@ -115,6 +115,6 @@ benchmarks/undeploy: jsonnet/build
 # Example: make benchmarks/data/download output=$(pwd)/.local
 .PHONY: benchmarks/download
 benchmarks/data/download: 
-	oc -n monitoring-benchmarks rsync $$(oc -n monitoring-benchmarks get pod -l app=monitoring-benchmarks -o=jsonpath='{.items[].metadata.name}'):/var/lib/benchmarks/runs "${output}/" -c runner
+	oc -n monitoring-benchmarks rsync $$(oc -n monitoring-benchmarks get pod -l app=monitoring-benchmarks -o=name):/var/lib/benchmarks/runs "${output}/" -c runner
 	echo
 	echo "See benchmark data at ${output}/runs, only directories with a SUCCESS file contain a completed benchmark run"
