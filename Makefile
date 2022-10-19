@@ -73,6 +73,9 @@ $(LOCAL_ROOT):
 $(E2E_BENCHMARKING_ROOT): $(LOCAL_ROOT)
 	ls $(E2E_BENCHMARKING_ROOT) || ( cd $(LOCAL_ROOT) && git clone https://github.com/cloud-bulldozer/e2e-benchmarking.git && cd e2e-benchmarking && git checkout $(E2E_BENCHMARKING_HASH) )
 
+.PHONY: cloud-bulldozer/e2e-benchmarking
+cloud-bulldozer/e2e-benchmarking: $(E2E_BENCHMARKING_ROOT)
+
 # Example: make run/benchmarks run_root=".local/run_benchmarks/$(date +%Y-%m-%d--%H-%M-%S)" pods_per_node=10 pod_churning_period='1m' number_of_ns=2
 .PHONY: run/benchmarks
 run/benchmarks: $(E2E_BENCHMARKING_ROOT)

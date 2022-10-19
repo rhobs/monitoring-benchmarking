@@ -10,3 +10,4 @@ RUN chmod 777 /usr/lib/benchmarks
 COPY Makefile ./
 COPY hack ./hack
 COPY config ./config
+RUN make cloud-bulldozer/e2e-benchmarking
