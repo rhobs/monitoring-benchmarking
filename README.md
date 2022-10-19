@@ -121,5 +121,5 @@ Run benchmarks locally:
 ```bash
 export cluster_name=...
 export KUBECONFIG=$(make cluster/kubeconfig)
-make run/benchmarks run_root=".local/run_benchmarks/$(date +%Y-%m-%d--%H-%M-%S)" pods_per_node=10 pod_churning_period='1m' number_of_ns=2
+make run/benchmarks run_root=".local/run_benchmarks/$(date +%Y-%m-%d--%H-%M-%S)" PODS_PER_NODE=10 POD_CHURNING_PERIOD='1m' NUMBER_OF_NS=2
 ```

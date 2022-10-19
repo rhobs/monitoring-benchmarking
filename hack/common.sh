@@ -85,11 +85,9 @@ function jsonnet_build {
 }
 
 function run_benchmarks {
-    run_root="${1}"
-    PODS_PER_NODE="${2}"
-    POD_CHURNING_PERIOD="${3}"
-    NUMBER_OF_NS="${4}"
+    # Assuming env vars defined: PODS_PER_NODE POD_CHURNING_PERIOD NUMBER_OF_NS
 
+    run_root="${1}"
     mkdir -p "${run_root}"
 
     echo "Aborting previous uncompleted runs"
@@ -102,9 +100,6 @@ function run_benchmarks {
             kubectl delete namespace "${ns}"
         done
     fi
-    export PODS_PER_NODE=${PODS_PER_NODE}
-    export POD_CHURNING_PERIOD=${POD_CHURNING_PERIOD}
-    export NUMBER_OF_NS=${NUMBER_OF_NS}
     METRICS="${CONFIG_ROOT}/prometheus-sizing-metrics.yaml"
     export METRICS
     source "${CONFIG_ROOT}/prometheus-sizing-env-base.sh"

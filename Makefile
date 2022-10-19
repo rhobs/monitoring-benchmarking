@@ -76,7 +76,7 @@ $(E2E_BENCHMARKING_ROOT): $(LOCAL_ROOT)
 .PHONY: cloud-bulldozer/e2e-benchmarking
 cloud-bulldozer/e2e-benchmarking: $(E2E_BENCHMARKING_ROOT)
 
-# Example: make run/benchmarks run_root=".local/run_benchmarks/$(date +%Y-%m-%d--%H-%M-%S)" pods_per_node=10 pod_churning_period='1m' number_of_ns=2
+# Example: make run/benchmarks run_root=".local/run_benchmarks/$(date +%Y-%m-%d--%H-%M-%S)" PODS_PER_NODE=10 POD_CHURNING_PERIOD='1m' NUMBER_OF_NS=2
 .PHONY: run/benchmarks
 run/benchmarks: $(E2E_BENCHMARKING_ROOT)
 	source $(COMMON_SCRIPT) && run_benchmarks "${run_root}" "${pods_per_node}" "${pod_churning_period}" "${number_of_ns}"
